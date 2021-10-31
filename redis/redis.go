@@ -70,9 +70,9 @@ func NewSlidingWindow(ctx context.Context, redis *redis.Client, masterKey string
 	d := &SlidingWindowLimiter{
 		redis:      redis,
 		ctx:        ctx,
-		key:        masterKey + ":__meta__",
-		lockKey:    masterKey + ":__meta__:mutex",
-		windowKey:  masterKey + ":__meta__:window",
+		key:        masterKey + ":__limiter__",
+		lockKey:    masterKey + ":__limiter__:mutex",
+		windowKey:  masterKey + ":__limiter__:window",
 		mux:        &sync.Mutex{},
 		uuid:       UUID,
 		redsync:    redsync.New(goredis.NewPool(redis)),
