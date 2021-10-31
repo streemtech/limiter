@@ -82,7 +82,7 @@ func NewSlidingWindow(ctx context.Context, redis *redis.Client, masterKey string
 
 	go func() {
 		for {
-			redis.Expire(context.TODO(), d.windowKey, time.Hour).Result()
+			d.timeout()
 			select {
 			case <-ctx.Done():
 				return
@@ -94,6 +94,12 @@ func NewSlidingWindow(ctx context.Context, redis *redis.Client, masterKey string
 	d.redmux = d.redsync.NewMutex(d.lockKey, redsync.WithExpiry(time.Second))
 
 	return d, nil
+}
+
+//timeout expires the window key so that, at worst. it is an hour left.
+//this allows for the keeping clean of the redis database.
+func (u *SlidingWindowLimiter) timeout() {
+	u.redis.Expire(context.TODO(), u.windowKey, time.Hour).Result()
 }
 
 type SlidingWindowReservation struct {
@@ -119,6 +125,7 @@ func (u *SlidingWindowLimiter) Reserve(ctx context.Context, options interface{})
 		id:      uuid.NewString(),
 	}
 	r.timeout = u.createReservation(r.id)
+	u.timeout()
 	return r
 }
 
