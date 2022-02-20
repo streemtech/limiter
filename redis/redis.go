@@ -26,7 +26,7 @@ const (
 )
 
 type SlidingWindowLimiter struct {
-	redis *redis.Client
+	redis redis.UniversalClient
 
 	//key is the base used for all other keys
 	key string
@@ -54,7 +54,7 @@ type SlidingWindowLimiter struct {
 //NewSlidingWindow returns a limiter that uses redis as a backing.
 //The limiter implements a sliding window limiter.
 //The sliding window limiter is
-func NewSlidingWindow(ctx context.Context, redis *redis.Client, masterKey string, window time.Duration, slots int) (*SlidingWindowLimiter, error) {
+func NewSlidingWindow(ctx context.Context, redis redis.UniversalClient, masterKey string, window time.Duration, slots int) (*SlidingWindowLimiter, error) {
 
 	//TODO add timeout for window and mutex,
 	//and add way for them to self refresh so long as the limiter is alive.
