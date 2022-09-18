@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/go-redis/redis/v8 v8.11.5
-	github.com/go-redsync/redsync/v4 v4.5.0
+	github.com/go-redsync/redsync/v4 v4.6.0
 	github.com/google/uuid v1.3.0
 )
 
