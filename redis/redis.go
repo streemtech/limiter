@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
-	redis "github.com/go-redis/redis/v8"
 	"github.com/go-redsync/redsync/v4"
-	"github.com/go-redsync/redsync/v4/redis/goredis/v8"
+	"github.com/go-redsync/redsync/v4/redis/goredis/v9"
 	"github.com/google/uuid"
+	redis "github.com/redis/go-redis/v9"
 	"github.com/streemtech/limiter"
 )
 
@@ -51,9 +51,9 @@ type SlidingWindowLimiter struct {
 	ctx context.Context
 }
 
-//NewSlidingWindow returns a limiter that uses redis as a backing.
-//The limiter implements a sliding window limiter.
-//The sliding window limiter is
+// NewSlidingWindow returns a limiter that uses redis as a backing.
+// The limiter implements a sliding window limiter.
+// The sliding window limiter is
 func NewSlidingWindow(ctx context.Context, redis redis.UniversalClient, masterKey string, window time.Duration, slots int) (*SlidingWindowLimiter, error) {
 
 	//TODO add timeout for window and mutex,
@@ -96,8 +96,8 @@ func NewSlidingWindow(ctx context.Context, redis redis.UniversalClient, masterKe
 	return d, nil
 }
 
-//timeout expires the window key so that, at worst. it is an hour left.
-//this allows for the keeping clean of the redis database.
+// timeout expires the window key so that, at worst. it is an hour left.
+// this allows for the keeping clean of the redis database.
 func (u *SlidingWindowLimiter) timeout() {
 	u.redis.Expire(context.TODO(), u.windowKey, time.Hour).Result()
 }
@@ -129,7 +129,7 @@ func (u *SlidingWindowLimiter) Reserve(ctx context.Context, options interface{})
 	return r
 }
 
-//cancels the reservation.
+// cancels the reservation.
 func (ulr *SlidingWindowReservation) Cancel() {
 	//only able to close reservations that have not been closed before, and are not yet triggered.
 	if ulr.status != Opened {
@@ -141,12 +141,12 @@ func (ulr *SlidingWindowReservation) Cancel() {
 
 }
 
-//Delay returns the delay from now before the reservation completes. (set during init)
+// Delay returns the delay from now before the reservation completes. (set during init)
 func (ulr *SlidingWindowReservation) Delay() time.Duration {
 	return time.Until(ulr.timeout)
 }
 
-//Ok returns if the reservation has reached its done state.
+// Ok returns if the reservation has reached its done state.
 func (ulr *SlidingWindowReservation) Ok() bool {
 	return ulr.status == Triggered
 }
@@ -164,7 +164,7 @@ func (ulr *SlidingWindowReservation) Wait() <-chan bool {
 	return m
 }
 
-//removeReservation removes a reservation from the list, if the timer has not yet passed.
+// removeReservation removes a reservation from the list, if the timer has not yet passed.
 func (u *SlidingWindowLimiter) removeReservation(ulr *SlidingWindowReservation) {
 	if ulr.timeout.Before(time.Now()) {
 		//the timeout is before now. Nothing to do. Should assume triggered.
@@ -174,8 +174,8 @@ func (u *SlidingWindowLimiter) removeReservation(ulr *SlidingWindowReservation) 
 
 }
 
-//creates a reservation in the limiter based on the ID.
-//the time returned, if not 0, is the time that the reservation triggers. So long as the time is in the future, it can be canceled.
+// creates a reservation in the limiter based on the ID.
+// the time returned, if not 0, is the time that the reservation triggers. So long as the time is in the future, it can be canceled.
 func (u *SlidingWindowLimiter) createReservation(id string) time.Time {
 	u.lock()
 	defer u.unlock()
@@ -192,7 +192,7 @@ func (u *SlidingWindowLimiter) createReservation(id string) time.Time {
 	}
 	//if there are less items than the window size, just return the current time as the trigger time.
 	if int(length) < u.windowSize {
-		u.redis.ZAdd(context.TODO(), u.windowKey, &redis.Z{
+		u.redis.ZAdd(context.TODO(), u.windowKey, redis.Z{
 			Score:  float64(checkTime.UnixMilli()),
 			Member: id,
 		})
@@ -214,14 +214,14 @@ func (u *SlidingWindowLimiter) createReservation(id string) time.Time {
 		return time.Time{}
 	}
 	newTime := time.UnixMilli(int64(score)).Add(u.windowTime)
-	u.redis.ZAdd(context.TODO(), u.windowKey, &redis.Z{
+	u.redis.ZAdd(context.TODO(), u.windowKey, redis.Z{
 		Score:  float64(newTime.UnixMilli()),
 		Member: id,
 	})
 	return newTime
 }
 
-//lock will attempt to gain a lock over u.lockKey
+// lock will attempt to gain a lock over u.lockKey
 func (u *SlidingWindowLimiter) lock() (err error) {
 	for i := 0; i < 10; i++ {
 		err = u.redmux.Lock()
@@ -233,7 +233,7 @@ func (u *SlidingWindowLimiter) lock() (err error) {
 	return err
 }
 
-//unlockFor will remove the lock.
+// unlockFor will remove the lock.
 func (u *SlidingWindowLimiter) unlock() (err error) {
 	_, err = u.redmux.Unlock()
 	return err

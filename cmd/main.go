@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	redis "github.com/go-redis/redis/v8"
+	redis "github.com/redis/go-redis/v9"
 	rLimiter "github.com/streemtech/limiter/redis"
 )
 
